@@ -3,8 +3,6 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
 
     <application
         android:name=".SimpleMediaPlayerApp"
@@ -33,9 +31,6 @@
                 android:value="" />
         </activity>
 
-        <service
-            android:name="com.rcudev.player_service.service.SimpleMediaService"
-            android:foregroundServiceType="mediaPlayback" />
     </application>
 
 </manifest>

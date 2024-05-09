@@ -6,22 +6,20 @@ import android.app.NotificationManager
 import android.content.Context
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import androidx.media3.ui.PlayerNotificationManager
 import com.rcudev.player_service.R
-import dagger.hilt.android.qualifiers.ApplicationContext
-import javax.inject.Inject
 
 private const val NOTIFICATION_ID = 200
 private const val NOTIFICATION_CHANNEL_NAME = "notification channel 1"
 private const val NOTIFICATION_CHANNEL_ID = "notification channel id 1"
 
-class SimpleMediaNotificationManager @Inject constructor(
-    @ApplicationContext private val context: Context,
-    private val player: ExoPlayer
+class SimpleMediaNotificationManager(
+    private val context: Context,
+    private val player: Player,
 ) {
 
     private var notificationManager: NotificationManagerCompat =

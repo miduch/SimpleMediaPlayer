@@ -35,13 +35,19 @@ class SimpleMediaViewModel @Inject constructor(
     val uiState = _uiState.asStateFlow()
 
     init {
+        simpleMediaServiceHandler.connect(
+            callBack = { connected ->
+                if (connected) {
+                    println("VM.init - simpleMediaServiceHandler is connected. Load data")
+                    loadData()
+                }
+            }
+        )
         viewModelScope.launch {
-            loadData()
-
             simpleMediaServiceHandler.simpleMediaState.collect { mediaState ->
                 when (mediaState) {
-                    is SimpleMediaState.Buffering -> calculateProgressValues(mediaState.progress)
                     SimpleMediaState.Initial -> _uiState.value = UIState.Initial
+                    is SimpleMediaState.Buffering -> calculateProgressValues(mediaState.progress)
                     is SimpleMediaState.Playing -> isPlaying = mediaState.isPlaying
                     is SimpleMediaState.Progress -> calculateProgressValues(mediaState.progress)
                     is SimpleMediaState.Ready -> {
@@ -54,9 +60,8 @@ class SimpleMediaViewModel @Inject constructor(
     }
 
     override fun onCleared() {
-        viewModelScope.launch {
-            simpleMediaServiceHandler.onPlayerEvent(PlayerEvent.Stop)
-        }
+        println("VM.onCleared")
+        simpleMediaServiceHandler.release()
     }
 
     fun onUIEvent(uiEvent: UIEvent) = viewModelScope.launch {
@@ -117,17 +122,16 @@ class SimpleMediaViewModel @Inject constructor(
         simpleMediaServiceHandler.addMediaItem(mediaItem)
         //simpleMediaServiceHandler.addMediaItemList(mediaItemList)
     }
-
 }
 
 sealed class UIEvent {
-    object PlayPause : UIEvent()
-    object Backward : UIEvent()
-    object Forward : UIEvent()
+    data object PlayPause : UIEvent()
+    data object Backward : UIEvent()
+    data object Forward : UIEvent()
     data class UpdateProgress(val newProgress: Float) : UIEvent()
 }
 
 sealed class UIState {
-    object Initial : UIState()
-    object Ready : UIState()
+    data object Initial : UIState()
+    data object Ready : UIState()
 }

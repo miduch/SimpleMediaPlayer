@@ -22,7 +22,6 @@ import com.rcudev.simplemediaplayer.common.ui.components.SimpleMediaPlayerUI
 internal fun SimpleMediaScreen(
     vm: SimpleMediaViewModel,
     navController: NavController,
-    startService: () -> Unit,
 ) {
     val state = vm.uiState.collectAsStateWithLifecycle()
 
@@ -38,10 +37,6 @@ internal fun SimpleMediaScreen(
                     .align(Alignment.Center)
             )
             is UIState.Ready -> {
-                LaunchedEffect(true) { // This is only call first time
-                    startService()
-                }
-
                 ReadyContent(vm = vm, navController = navController)
             }
         }
