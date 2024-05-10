@@ -111,7 +111,7 @@ class SimpleMediaViewModel @Inject constructor(
                     .setFolderType(MediaMetadata.FOLDER_TYPE_ALBUMS)
                     .setArtworkUri(Uri.parse("https://i.pinimg.com/736x/4b/02/1f/4b021f002b90ab163ef41aaaaa17c7a4.jpg"))
                     .setAlbumTitle("SoundHelix")
-                    .setDisplayTitle("Song 1")
+                    .setTitle("Song 1")
                     .build()
             ).build()
 

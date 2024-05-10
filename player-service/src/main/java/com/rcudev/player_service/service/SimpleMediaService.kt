@@ -24,7 +24,7 @@ class SimpleMediaService : MediaSessionService() {
     lateinit var appContext: Context
 
     private var mediaSession: MediaSession? = null
-    private var notificationManager: SimpleMediaNotificationManager? = null
+    //private var notificationManager: SimpleMediaNotificationManager? = null
 
     @OptIn(UnstableApi::class)
     override fun onCreate() {
@@ -41,15 +41,15 @@ class SimpleMediaService : MediaSessionService() {
                 .setTrackSelector(DefaultTrackSelector(appContext))
                 .build()
 
-        notificationManager = SimpleMediaNotificationManager(
-            context = appContext,
-            player = player
-        )
+        //notificationManager = SimpleMediaNotificationManager(
+        //    context = appContext,
+        //    player = player
+        //)
 
         mediaSession = MediaSession.Builder(appContext, player).build()
     }
 
-    @UnstableApi
+    /*@UnstableApi
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         println("SimpleMediaService.onStartCommand")
         val session = mediaSession
@@ -62,7 +62,7 @@ class SimpleMediaService : MediaSessionService() {
         }
 
         return super.onStartCommand(intent, flags, startId)
-    }
+    }*/
 
     // The user dismissed the app from the recent tasks
     override fun onTaskRemoved(rootIntent: Intent?) {
@@ -91,7 +91,7 @@ class SimpleMediaService : MediaSessionService() {
             player.release()
             release()
             mediaSession = null
-            notificationManager = null
+            //notificationManager = null
         }
         super.onDestroy()
     }
