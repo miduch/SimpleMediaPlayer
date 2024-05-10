@@ -1,6 +1,8 @@
 package com.rcudev.simplemediaplayer.common.ui
 
 import android.net.Uri
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -26,8 +28,8 @@ class SimpleMediaViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    var duration by savedStateHandle.saveable { mutableStateOf(0L) }
-    var progress by savedStateHandle.saveable { mutableStateOf(0f) }
+    var duration by savedStateHandle.saveable { mutableLongStateOf(0L) }
+    var progress by savedStateHandle.saveable { mutableFloatStateOf(0f) }
     var progressString by savedStateHandle.saveable { mutableStateOf("00:00") }
     var isPlaying by savedStateHandle.saveable { mutableStateOf(false) }
 
@@ -36,13 +38,22 @@ class SimpleMediaViewModel @Inject constructor(
 
     init {
         simpleMediaServiceHandler.connect(
-            callBack = { connected ->
-                if (connected) {
-                    println("VM.init - simpleMediaServiceHandler is connected. Load data")
-                    loadData()
+            callBack = { connected, playing ->
+                when {
+                    connected && playing -> {
+                        println("VM.init - simpleMediaServiceHandler is connected and is playing")
+                    }
+                    connected && !playing -> {
+                        println("VM.init - simpleMediaServiceHandler is connected. Load data")
+                        loadData()
+                    }
+                    else -> {
+                        println("VM.init - simpleMediaServiceHandler failed to connect")
+                    }
                 }
             }
         )
+
         viewModelScope.launch {
             simpleMediaServiceHandler.simpleMediaState.collect { mediaState ->
                 when (mediaState) {

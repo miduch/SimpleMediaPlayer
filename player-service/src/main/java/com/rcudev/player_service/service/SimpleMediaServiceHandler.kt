@@ -41,21 +41,8 @@ class SimpleMediaServiceHandler @Inject constructor(
     }
 
     fun connect(
-        callBack: (Boolean) -> Unit = {},
-        isRetry: Boolean = false,
+        callBack: (Boolean, Boolean) -> Unit = { _, _ -> },
     ) {
-        if (controller?.isConnected == true) {
-            println("SimpleMediaServiceHandler.connect - already connected")
-            _simpleMediaState.update {
-                SimpleMediaState.Ready(controller?.duration ?: 0)
-            }
-            //_simpleMediaState.update {
-            //    SimpleMediaState.Playing(controller?.isPlaying ?: false)
-            //}
-            startProgressUpdate()
-            return
-        }
-
         println("SimpleMediaServiceHandler.connect")
         kotlin.runCatching {
             val sessionToken = SessionToken(
@@ -68,19 +55,21 @@ class SimpleMediaServiceHandler @Inject constructor(
                     println("SimpleMediaServiceHandler.connect - controllerFuture.get")
                     controller = controllerFuture?.get()
                     controller?.addListener(this@SimpleMediaServiceHandler)
-                    callBack(controller?.isConnected ?: false)
+                    val connected = controller?.isConnected ?: false
+                    val playing = controller?.isPlaying ?: false
+                    callBack(connected, playing)
+                    _simpleMediaState.update {
+                        SimpleMediaState.Ready(controller?.duration ?: 0)
+                    }
+                    onIsPlayingChanged(playing)
                 },
                 MoreExecutors.directExecutor()
             )
         }.onSuccess {
-            println("SimpleMediaServiceHandler.connect got handle to controller")
+            println("SimpleMediaServiceHandler.connect session token created")
         }.onFailure {
-            println("SimpleMediaServiceHandler.connect failed to get handle to controller. retry. err ${it.message}")
-            if (!isRetry) {
-                connect(isRetry = true)
-            } else {
-                callBack(false)
-            }
+            println("SimpleMediaServiceHandler.connect failed to get handle to controller. err ${it.message}")
+            callBack(false, false)
         }
     }
 
@@ -110,7 +99,7 @@ class SimpleMediaServiceHandler @Inject constructor(
         controller?.prepare()
     }
 
-    suspend fun onPlayerEvent(playerEvent: PlayerEvent) {
+    fun onPlayerEvent(playerEvent: PlayerEvent) {
         println("SimpleMediaServiceHandler.onPlayerEvent $playerEvent")
         val controller = this.controller ?: return
         when (playerEvent) {
@@ -153,7 +142,6 @@ class SimpleMediaServiceHandler @Inject constructor(
         }
     }
 
-    @OptIn(DelicateCoroutinesApi::class)
     override fun onIsPlayingChanged(isPlaying: Boolean) {
         println("SimpleMediaServiceHandler.onIsPlayingChanged $isPlaying")
         _simpleMediaState.update { SimpleMediaState.Playing(isPlaying = isPlaying) }
