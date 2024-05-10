@@ -11,12 +11,11 @@ import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
-import com.google.common.util.concurrent.ListenableFuture
-import com.google.common.util.concurrent.MoreExecutors
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.guava.await
 import javax.inject.Inject
 
 class SimpleMediaServiceHandler @Inject constructor(
@@ -27,7 +26,6 @@ class SimpleMediaServiceHandler @Inject constructor(
     private val _simpleMediaState = MutableStateFlow<SimpleMediaState>(SimpleMediaState.Initial)
     val simpleMediaState = _simpleMediaState.asStateFlow()
 
-    private var controllerFuture: ListenableFuture<MediaController>? = null
     private var controller: MediaController? = null
     private var job: Job? = null
 
@@ -43,42 +41,39 @@ class SimpleMediaServiceHandler @Inject constructor(
     fun connect(
         callBack: (Boolean, Boolean) -> Unit = { _, _ -> },
     ) {
-        println("SimpleMediaServiceHandler.connect")
-        kotlin.runCatching {
-            val sessionToken = SessionToken(
-                appContext,
-                ComponentName(appContext, SimpleMediaService::class.java)
-            )
-            controllerFuture = MediaController.Builder(appContext, sessionToken).buildAsync()
-            controllerFuture?.addListener(
-                {
-                    println("SimpleMediaServiceHandler.connect - controllerFuture.get")
-                    controller = controllerFuture?.get()
-                    controller?.addListener(this@SimpleMediaServiceHandler)
-                    val connected = controller?.isConnected ?: false
-                    val playing = controller?.isPlaying ?: false
-                    callBack(connected, playing)
-                    _simpleMediaState.update {
-                        SimpleMediaState.Ready(controller?.duration ?: 0)
-                    }
-                    onIsPlayingChanged(playing)
-                },
-                MoreExecutors.directExecutor()
-            )
-        }.onSuccess {
-            println("SimpleMediaServiceHandler.connect session token created")
-        }.onFailure {
-            println("SimpleMediaServiceHandler.connect failed to get handle to controller. err ${it.message}")
-            callBack(false, false)
+        job?.cancel()
+        job = scope.launch {
+            println("SimpleMediaServiceHandler.connect")
+            kotlin.runCatching {
+                val sessionToken = SessionToken(
+                    appContext,
+                    ComponentName(appContext, SimpleMediaService::class.java)
+                )
+                controller = MediaController.Builder(appContext, sessionToken)
+                    .buildAsync()
+                    .await()
+                controller?.addListener(this@SimpleMediaServiceHandler)
+                val connected = controller?.isConnected ?: false
+                val playing = controller?.isPlaying ?: false
+                callBack(connected, playing)
+                _simpleMediaState.update {
+                    SimpleMediaState.Ready(controller?.duration ?: 0)
+                }
+                onIsPlayingChanged(playing)
+            }.onSuccess {
+                println("SimpleMediaServiceHandler.connect session token created")
+            }.onFailure {
+                println("SimpleMediaServiceHandler.connect failed to get handle to controller. err ${it.message}")
+                callBack(false, false)
+            }
         }
     }
 
     fun release(stopPlayback: Boolean = false) {
         println("SimpleMediaServiceHandler.release called, cleanup")
         controller ?: return
+        job?.cancel()
         stopProgressUpdate()
-        controllerFuture?.cancel(true)
-        controllerFuture = null
         controller?.release()
         controller = null
         if (stopPlayback && appContext.isServiceRunning(SimpleMediaService::class.java)) {
