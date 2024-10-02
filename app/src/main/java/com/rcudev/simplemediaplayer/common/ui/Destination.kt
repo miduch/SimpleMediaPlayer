@@ -1,6 +1,6 @@
 package com.rcudev.simplemediaplayer.common.ui
 
 sealed class Destination(val route: String) {
-    object Main: Destination("main")
-    object Secondary: Destination("secondary")
+    data object Main: Destination("main")
+    data object Secondary: Destination("secondary")
 }
